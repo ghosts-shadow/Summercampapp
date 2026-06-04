@@ -1,0 +1,6 @@
+firstName,lastName,age,gender,guardianName,guardianPhone,emergencyContact,medicalNotes,group
+John,Doe,12,MALE,Jane Doe,(555) 123-4567,Jane Doe (555) 123-4567,Peanut allergy,Red Lions
+Mary,Smith,9,FEMALE,Robert Smith,(555) 234-5678,Robert Smith (555) 234-5678,,Blue Eagles
+Daniel,Johnson,15,MALE,Sarah Johnson,(555) 345-6789,Sarah Johnson (555) 345-6789,Asthma — carries inhaler,Green Vipers
+Grace,Williams,11,FEMALE,Mark Williams,(555) 456-7890,Mark Williams (555) 456-7890,,
+Samuel,Brown,17,MALE,Linda Brown,(555) 567-8901,Linda Brown (555) 567-8901,,Gold Falcons

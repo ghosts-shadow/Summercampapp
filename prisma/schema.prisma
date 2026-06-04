@@ -1,0 +1,231 @@
+// ===========================================================================
+//  ST. JOSEPH'S CATHEDRAL SUMMER CAMP — Prisma Schema
+//  PostgreSQL + Prisma ORM
+// ===========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+//  ENUMS
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNSPECIFIED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+// ---------------------------------------------------------------------------
+//  USER  (staff & admins)
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  phone        String?
+  image        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  ledGroups       Group[]       @relation("GroupLeader")
+  scoreEntries    ScoreEntry[]  @relation("ScoreAuthor")
+  attendanceTaken Attendance[]  @relation("AttendanceRecorder")
+  activityLogs    ActivityLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+// ---------------------------------------------------------------------------
+//  GROUP  (teams the campers belong to and that earn points)
+// ---------------------------------------------------------------------------
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String   @default("#3b82f6")
+  description String?
+  // Denormalized running total — kept in sync inside score transactions so
+  // the leaderboard can be sorted without aggregating ScoreEntry every read.
+  totalScore  Int      @default(0)
+  leaderId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  leader         User?            @relation("GroupLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  campers        Camper[]
+  attendances    Attendance[]
+  scoreEntries   ScoreEntry[]
+  rankingHistory RankingHistory[]
+
+  @@index([leaderId])
+  @@index([totalScore])
+}
+
+// ---------------------------------------------------------------------------
+//  CAMPER
+// ---------------------------------------------------------------------------
+
+model Camper {
+  id               String   @id @default(cuid())
+  firstName        String
+  lastName         String
+  age              Int
+  gender           Gender   @default(UNSPECIFIED)
+  guardianName     String
+  guardianPhone    String
+  emergencyContact String
+  medicalNotes     String?
+  registrationDate DateTime @default(now())
+  groupId          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  group             Group?             @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  attendanceRecords AttendanceRecord[]
+
+  @@index([groupId])
+  @@index([lastName, firstName])
+  @@index([age])
+}
+
+// ---------------------------------------------------------------------------
+//  ATTENDANCE  (one record per group per day — the "session" header)
+// ---------------------------------------------------------------------------
+
+model Attendance {
+  id           String   @id @default(cuid())
+  date         DateTime @db.Date
+  groupId      String
+  recordedById String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  group      Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  recordedBy User?              @relation("AttendanceRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+  records    AttendanceRecord[]
+
+  @@unique([date, groupId])
+  @@index([date])
+  @@index([groupId])
+}
+
+// ---------------------------------------------------------------------------
+//  ATTENDANCE RECORD  (per-camper status inside a daily Attendance)
+// ---------------------------------------------------------------------------
+
+model AttendanceRecord {
+  id           String           @id @default(cuid())
+  attendanceId String
+  camperId     String
+  status       AttendanceStatus @default(PRESENT)
+  note         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  // Relations
+  attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  camper     Camper     @relation(fields: [camperId], references: [id], onDelete: Cascade)
+
+  @@unique([attendanceId, camperId])
+  @@index([camperId])
+  @@index([attendanceId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+//  SCORE ENTRY  (immutable points ledger — the audit trail for scoring)
+// ---------------------------------------------------------------------------
+
+model ScoreEntry {
+  id        String   @id @default(cuid())
+  groupId   String
+  points    Int
+  category  String   @default("General")
+  reason    String
+  staffId   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  staff User? @relation("ScoreAuthor", fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@index([groupId])
+  @@index([staffId])
+  @@index([category])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+//  RANKING HISTORY  (periodic snapshots of the leaderboard)
+// ---------------------------------------------------------------------------
+
+model RankingHistory {
+  id           String   @id @default(cuid())
+  groupId      String
+  rank         Int
+  score        Int
+  snapshotDate DateTime @default(now())
+
+  // Relations
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([snapshotDate])
+  @@index([rank])
+}
+
+// ---------------------------------------------------------------------------
+//  ACTIVITY LOG  (audit logging for every mutating action)
+// ---------------------------------------------------------------------------
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  message   String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
+  @@index([createdAt])
+}
