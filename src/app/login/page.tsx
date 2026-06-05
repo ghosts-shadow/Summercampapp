@@ -38,20 +38,8 @@ export default async function LoginPage({
               Sign in to the staff &amp; admin portal
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <LoginForm callbackUrl={callbackUrl} />
-
-            <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-              <p className="font-medium text-foreground">Demo credentials</p>
-              <p className="mt-1">
-                Admin: <code>admin@stjosephscamp.org</code> /{" "}
-                <code>ChangeMe123!</code>
-              </p>
-              <p>
-                Staff: <code>sarah.mitchell@stjosephscamp.org</code> /{" "}
-                <code>Staff123!</code>
-              </p>
-            </div>
           </CardContent>
         </Card>
 
