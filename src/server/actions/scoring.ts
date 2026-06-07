@@ -6,6 +6,7 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/session";
 import { canManageGroup } from "@/lib/authz";
+import { SCORE_CATEGORIES } from "@/lib/constants";
 import { logActivity } from "@/lib/activity";
 import { snapshotRankings } from "@/lib/rankings";
 import { ActionResult, fail, handleActionError, ok, zodFail } from "@/lib/action";
@@ -32,6 +33,19 @@ export async function createScoreEntry(
     // Staff may only score groups they lead; admins may score any group.
     if (!(await canManageGroup(user, data.groupId))) {
       return fail("You can only award or deduct points for a group you lead.");
+    }
+
+    // Only admins may introduce a new category; staff must use an existing one.
+    if (user.role !== Role.ADMIN) {
+      const known = new Set<string>([...SCORE_CATEGORIES]);
+      const used = await prisma.scoreEntry.findMany({
+        distinct: ["category"],
+        select: { category: true },
+      });
+      for (const u of used) known.add(u.category);
+      if (!known.has(data.category)) {
+        return fail("Only an administrator can create a new category.");
+      }
     }
 
     // Create the ledger entry and keep the denormalized total in sync.

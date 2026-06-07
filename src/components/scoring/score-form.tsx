@@ -3,10 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Minus, Plus } from "lucide-react";
+import { Loader2, Minus, Plus, PlusCircle, X } from "lucide-react";
 
 import { createScoreEntry } from "@/server/actions/scoring";
-import { SCORE_CATEGORIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,30 +22,50 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 
 type Mode = "award" | "deduct";
 const QUICK = [5, 10, 25, 50];
+const ADD_CATEGORY = "__add_category__";
 
 export function ScoreForm({
   groups,
+  categories,
+  canAddCategory = false,
 }: {
   groups: { id: string; name: string; color: string }[];
+  categories: string[];
+  canAddCategory?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [groupId, setGroupId] = useState("");
   const [mode, setMode] = useState<Mode>("award");
   const [points, setPoints] = useState("");
-  const [category, setCategory] = useState<string>(SCORE_CATEGORIES[0]);
+  const [category, setCategory] = useState<string>(categories[0] ?? "General");
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState("");
   const [reason, setReason] = useState("");
+
+  function onCategoryChange(value: string) {
+    if (value === ADD_CATEGORY) {
+      setAddingCategory(true);
+      setCustomCategory("");
+    } else {
+      setCategory(value);
+    }
+  }
 
   function submit() {
     const magnitude = Number(points);
+    const effectiveCategory = addingCategory ? customCategory.trim() : category;
+
     if (!groupId) return toast.error("Select a group.");
     if (!magnitude || Number.isNaN(magnitude)) return toast.error("Enter points.");
+    if (!effectiveCategory) return toast.error("Enter a category name.");
     if (!reason.trim()) return toast.error("Add a reason.");
 
     const signed = mode === "deduct" ? -Math.abs(magnitude) : Math.abs(magnitude);
@@ -55,11 +74,16 @@ export function ScoreForm({
       const result = await createScoreEntry({
         groupId,
         points: signed,
-        category,
+        category: effectiveCategory,
         reason: reason.trim(),
       });
       if (result.ok) {
         toast.success(result.message ?? "Points recorded");
+        // Keep the (possibly new) category selected; it now appears in the list
+        // after refresh because it's persisted on the score entry.
+        setCategory(effectiveCategory);
+        setAddingCategory(false);
+        setCustomCategory("");
         setPoints("");
         setReason("");
         router.refresh();
@@ -146,19 +170,56 @@ export function ScoreForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label>Category</Label>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SCORE_CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor={addingCategory ? "new-category" : undefined}>
+            Category
+          </Label>
+          {addingCategory ? (
+            <div className="flex gap-2">
+              <Input
+                id="new-category"
+                autoFocus
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="New category name"
+                maxLength={60}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Cancel new category"
+                onClick={() => {
+                  setAddingCategory(false);
+                  setCustomCategory("");
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Select value={category} onValueChange={onCategoryChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+                {canAddCategory && (
+                  <>
+                    <SelectSeparator />
+                    <SelectItem value={ADD_CATEGORY}>
+                      <span className="inline-flex items-center gap-2 text-primary">
+                        <PlusCircle className="h-4 w-4" /> Add new category…
+                      </span>
+                    </SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="space-y-1.5">
