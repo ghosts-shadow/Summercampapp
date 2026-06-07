@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +64,8 @@ const REPORTS: ReportDef[] = [
 ];
 
 export default async function ReportsPage() {
-  await requireUser();
+  // Bulk exports contain camper PII — restrict the whole reports area to admins.
+  await requireAdmin();
 
   const [campers, groups, scoreEntries, sessions] = await Promise.all([
     prisma.camper.count(),

@@ -194,21 +194,23 @@ export function CampersTable({
             </SelectContent>
           </Select>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Download className="h-4 w-4" /> Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <a href="/api/export/campers?format=csv">Export as CSV</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href="/api/export/campers?format=xlsx">Export as Excel</a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <a href="/api/export/campers?format=csv">Export as CSV</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/api/export/campers?format=xlsx">Export as Excel</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {isAdmin && <CamperImportDialog />}
           {isAdmin && (

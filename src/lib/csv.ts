@@ -73,10 +73,13 @@ export function parseCSVToObjects(text: string): Record<string, string>[] {
   if (rows.length < 2) return [];
 
   const headers = rows[0].map(normalizeHeader);
+  // Never let attacker-controlled headers reach a prototype.
+  const BLOCKED = new Set(["__proto__", "constructor", "prototype"]);
 
   return rows.slice(1).map((cells) => {
-    const obj: Record<string, string> = {};
+    const obj: Record<string, string> = Object.create(null);
     headers.forEach((h, i) => {
+      if (!h || BLOCKED.has(h)) return;
       obj[h] = (cells[i] ?? "").trim();
     });
     return obj;

@@ -27,8 +27,11 @@ export async function fetchAttendance(
   groupId: string,
   dateISO: string,
 ): Promise<ExistingAttendance> {
-  await authorize([Role.ADMIN, Role.STAFF]);
+  const user = await authorize([Role.ADMIN, Role.STAFF]);
   if (!groupId || !dateISO) return {};
+
+  // Staff may only read attendance for groups they lead (matches the write path).
+  if (!(await canManageGroup(user, groupId))) return {};
 
   const day = toUtcDate(new Date(dateISO));
   const attendance = await prisma.attendance.findUnique({
@@ -58,6 +61,17 @@ export async function saveAttendance(input: unknown): Promise<ActionResult> {
       return fail("You can only record attendance for a group you lead.");
     }
 
+    // Integrity: only accept records for campers that belong to this group.
+    const memberIds = new Set(
+      (
+        await prisma.camper.findMany({
+          where: { groupId },
+          select: { id: true },
+        })
+      ).map((c) => c.id),
+    );
+    const validRecords = records.filter((r) => memberIds.has(r.camperId));
+
     const day = toUtcDate(date);
 
     await prisma.$transaction(async (tx) => {
@@ -72,7 +86,7 @@ export async function saveAttendance(input: unknown): Promise<ActionResult> {
         update: { recordedById: user.id, notes: notes || null },
       });
 
-      for (const rec of records) {
+      for (const rec of validRecords) {
         await tx.attendanceRecord.upsert({
           where: {
             attendanceId_camperId: {
@@ -96,7 +110,7 @@ export async function saveAttendance(input: unknown): Promise<ActionResult> {
       action: "ATTENDANCE",
       entity: "Group",
       entityId: groupId,
-      message: `Recorded attendance for ${records.length} camper(s)`,
+      message: `Recorded attendance for ${validRecords.length} camper(s)`,
       metadata: { date: day.toISOString().slice(0, 10) },
     });
 

@@ -73,9 +73,11 @@ export default async function AttendancePage() {
             : "Record daily attendance for your group."
         }
       >
-        <Button asChild variant="outline">
-          <Link href="/api/export/attendance?format=csv">Export CSV</Link>
-        </Button>
+        {isAdmin && (
+          <Button asChild variant="outline">
+            <Link href="/api/export/attendance?format=csv">Export CSV</Link>
+          </Button>
+        )}
       </PageHeader>
 
       {groups.length === 0 ? (

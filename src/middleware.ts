@@ -27,6 +27,10 @@ export default auth((req) => {
 
   // Gate everything that is not explicitly public.
   if (!isLoggedIn && !isPublic(path)) {
+    // API clients can't follow an HTML login redirect — return a proper 401.
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const loginUrl = new URL("/login", nextUrl);
     loginUrl.searchParams.set("callbackUrl", path);
     return NextResponse.redirect(loginUrl);

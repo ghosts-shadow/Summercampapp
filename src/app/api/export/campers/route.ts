@@ -24,6 +24,7 @@ type Row = {
 export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+  if (user.role !== "ADMIN") return new Response("Forbidden", { status: 403 });
 
   const format = new URL(req.url).searchParams.get("format");
 

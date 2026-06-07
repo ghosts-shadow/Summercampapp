@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { title: "Attendance", href: "/attendance", icon: ClipboardCheck },
   { title: "Scoring", href: "/scoring", icon: Award },
   { title: "Rankings", href: "/rankings", icon: Trophy },
-  { title: "Reports", href: "/reports", icon: FileText },
+  { title: "Reports", href: "/reports", icon: FileText, adminOnly: true },
   { title: "Staff", href: "/staff", icon: ShieldCheck, adminOnly: true },
 ];
 
