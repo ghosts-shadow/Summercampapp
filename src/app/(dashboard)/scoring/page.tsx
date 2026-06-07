@@ -3,10 +3,10 @@ import { Award } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { SCORE_CATEGORIES } from "@/lib/constants";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ScoreForm } from "@/components/scoring/score-form";
+import { ManageCategoriesDialog } from "@/components/scoring/manage-categories-dialog";
 import {
   ScoreHistory,
   type ScoreEntryRecord,
@@ -18,7 +18,7 @@ export default async function ScoringPage() {
   const user = await requireUser();
   const isAdmin = user.role === "ADMIN";
 
-  const [allGroups, entries, usedCategories] = await Promise.all([
+  const [allGroups, entries, categoryRows] = await Promise.all([
     prisma.group.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true, color: true },
@@ -31,20 +31,13 @@ export default async function ScoringPage() {
         staff: { select: { name: true } },
       },
     }),
-    prisma.scoreEntry.findMany({
-      distinct: ["category"],
-      select: { category: true },
-      orderBy: { category: "asc" },
+    prisma.scoreCategory.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
     }),
   ]);
 
-  // Built-in defaults first, then any custom categories already in use.
-  const defaults = SCORE_CATEGORIES as readonly string[];
-  const extraCategories = usedCategories
-    .map((c) => c.category)
-    .filter((c) => !defaults.includes(c))
-    .sort();
-  const categories = [...defaults, ...extraCategories];
+  const categories = categoryRows.map((c) => c.name);
 
   // Staff may only award points to groups they lead; admins to any group.
   const formGroups = isAdmin
@@ -64,7 +57,9 @@ export default async function ScoringPage() {
             ? "Award or deduct points and review the full score history."
             : "Award or deduct points for your group and review the score history."
         }
-      />
+      >
+        {isAdmin && <ManageCategoriesDialog categories={categoryRows} />}
+      </PageHeader>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
           {formGroups.length > 0 ? (

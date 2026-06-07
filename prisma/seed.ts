@@ -84,6 +84,7 @@ async function main() {
   await prisma.attendanceRecord.deleteMany();
   await prisma.attendance.deleteMany();
   await prisma.scoreEntry.deleteMany();
+  await prisma.scoreCategory.deleteMany();
   await prisma.camper.deleteMany();
   await prisma.group.deleteMany();
   await prisma.user.deleteMany();
@@ -207,6 +208,14 @@ async function main() {
     });
   }
   console.log(`✅  ${scoreEntryCount} score entries created`);
+
+  // ---- Score categories (admin-managed list) ----------------------------
+  const categoryNames = Array.from(new Set(["General", ...SCORE_CATEGORIES]));
+  await prisma.scoreCategory.createMany({
+    data: categoryNames.map((name) => ({ name })),
+    skipDuplicates: true,
+  });
+  console.log(`✅  ${categoryNames.length} score categories created`);
 
   // ---- Attendance sessions (first two camp weeks) -----------------------
   // July 6–17, 2026 weekdays.

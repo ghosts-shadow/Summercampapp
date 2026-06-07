@@ -6,7 +6,6 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/session";
 import { canManageGroup } from "@/lib/authz";
-import { SCORE_CATEGORIES } from "@/lib/constants";
 import { logActivity } from "@/lib/activity";
 import { snapshotRankings } from "@/lib/rankings";
 import { ActionResult, fail, handleActionError, ok, zodFail } from "@/lib/action";
@@ -35,17 +34,18 @@ export async function createScoreEntry(
       return fail("You can only award or deduct points for a group you lead.");
     }
 
-    // Only admins may introduce a new category; staff must use an existing one.
-    if (user.role !== Role.ADMIN) {
-      const known = new Set<string>([...SCORE_CATEGORIES]);
-      const used = await prisma.scoreEntry.findMany({
-        distinct: ["category"],
-        select: { category: true },
-      });
-      for (const u of used) known.add(u.category);
-      if (!known.has(data.category)) {
+    // Categories are admin-managed. Staff must use an existing one; an admin
+    // who types a new one auto-registers it in the managed list.
+    const existingCategory = await prisma.scoreCategory.findUnique({
+      where: { name: data.category },
+    });
+    if (!existingCategory) {
+      if (user.role !== Role.ADMIN) {
         return fail("Only an administrator can create a new category.");
       }
+      await prisma.scoreCategory
+        .create({ data: { name: data.category } })
+        .catch(() => undefined); // ignore rare unique race
     }
 
     // Create the ledger entry and keep the denormalized total in sync.

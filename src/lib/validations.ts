@@ -137,3 +137,21 @@ export const attendanceSchema = z.object({
     .min(1, "Add at least one attendance record"),
 });
 export type AttendanceInput = z.infer<typeof attendanceSchema>;
+
+// ---------------------------------------------------------------------------
+//  Score categories (admin-managed)
+// ---------------------------------------------------------------------------
+
+export const categorySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Category name is required")
+    .max(60, "Keep it under 60 characters"),
+});
+export type CategoryInput = z.infer<typeof categorySchema>;
+
+export const renameCategorySchema = categorySchema.extend({
+  id: z.string().min(1),
+});
+export type RenameCategoryInput = z.infer<typeof renameCategorySchema>;
