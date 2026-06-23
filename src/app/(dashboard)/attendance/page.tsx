@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
 
+import { Role } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/session";
+import { requireRole } from "@/lib/session";
 import { formatDate, toDateInputValue } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -20,7 +22,8 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = { title: "Attendance" };
 
 export default async function AttendancePage() {
-  const user = await requireUser();
+  // Attendance is for admins and staff (group leaders); scorers are redirected.
+  const user = await requireRole([Role.ADMIN, Role.STAFF]);
   const isAdmin = user.role === "ADMIN";
 
   // Staff only see the groups they lead; admins see all.

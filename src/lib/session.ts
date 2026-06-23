@@ -30,6 +30,13 @@ export async function requireAdmin(): Promise<SessionUser> {
   return user;
 }
 
+/** For pages/layouts: require one of the given roles or redirect to the dashboard. */
+export async function requireRole(roles: Role[]): Promise<SessionUser> {
+  const user = await requireUser();
+  if (!roles.includes(user.role)) redirect("/dashboard");
+  return user;
+}
+
 /** Thrown by `authorize()` inside server actions. */
 export class AuthorizationError extends Error {
   constructor(message = "You are not authorized to perform this action.") {

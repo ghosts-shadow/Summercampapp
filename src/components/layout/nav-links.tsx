@@ -22,14 +22,26 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   adminOnly?: boolean;
+  /** If set, only these roles see the item. */
+  roles?: Role[];
 }
 
 const NAV_ITEMS: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Campers", href: "/campers", icon: Users },
   { title: "Groups", href: "/groups", icon: Boxes },
-  { title: "Attendance", href: "/attendance", icon: ClipboardCheck },
-  { title: "Scoring", href: "/scoring", icon: Award },
+  {
+    title: "Attendance",
+    href: "/attendance",
+    icon: ClipboardCheck,
+    roles: ["ADMIN", "STAFF"],
+  },
+  {
+    title: "Scoring",
+    href: "/scoring",
+    icon: Award,
+    roles: ["ADMIN", "SCORER"],
+  },
   { title: "Rankings", href: "/rankings", icon: Trophy },
   { title: "Reports", href: "/reports", icon: FileText, adminOnly: true },
   { title: "Staff", href: "/staff", icon: ShieldCheck, adminOnly: true },
@@ -46,7 +58,11 @@ export function NavLinks({
 
   return (
     <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.filter((item) => !item.adminOnly || role === "ADMIN").map(
+      {NAV_ITEMS.filter((item) => {
+        if (item.roles) return item.roles.includes(role);
+        if (item.adminOnly) return role === "ADMIN";
+        return true;
+      }).map(
         (item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);

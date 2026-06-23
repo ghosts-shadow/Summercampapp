@@ -53,6 +53,7 @@ export const GROUP_COLORS: string[] = TEAM_COLORS.map((c) => c.hex);
 
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrator",
+  SCORER: "Scorer",
   STAFF: "Staff",
 };
 

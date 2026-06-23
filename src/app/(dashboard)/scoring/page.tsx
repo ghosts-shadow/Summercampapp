@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Award } from "lucide-react";
 
+import { Role } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/session";
+import { requireRole } from "@/lib/session";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ScoreForm } from "@/components/scoring/score-form";
@@ -15,7 +17,8 @@ import {
 export const metadata: Metadata = { title: "Scoring" };
 
 export default async function ScoringPage() {
-  const user = await requireUser();
+  // Scoring is for admins and dedicated scorers only.
+  const user = await requireRole([Role.ADMIN, Role.SCORER]);
   const isAdmin = user.role === "ADMIN";
 
   const [allGroups, entries, categoryRows] = await Promise.all([
@@ -39,24 +42,14 @@ export default async function ScoringPage() {
 
   const categories = categoryRows.map((c) => c.name);
 
-  // Staff may only award points to groups they lead; admins to any group.
-  const formGroups = isAdmin
-    ? allGroups
-    : await prisma.group.findMany({
-        where: { leaderId: user.id },
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, color: true },
-      });
+  // Admins and scorers may award points to any group.
+  const formGroups = allGroups;
 
   return (
     <div>
       <PageHeader
         title="Scoring"
-        description={
-          isAdmin
-            ? "Award or deduct points and review the full score history."
-            : "Award or deduct points for your group and review the score history."
-        }
+        description="Award or deduct points for any group and review the score history."
       >
         {isAdmin && <ManageCategoriesDialog categories={categoryRows} />}
       </PageHeader>
@@ -71,8 +64,8 @@ export default async function ScoringPage() {
           ) : (
             <EmptyState
               icon={Award}
-              title="No group to score"
-              description="You aren't assigned as the leader of any group yet. Ask an administrator to assign you, then you can award points here."
+              title="No groups yet"
+              description="No groups have been created yet. An administrator needs to create groups before points can be awarded."
             />
           )}
         </div>

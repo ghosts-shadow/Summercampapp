@@ -5,7 +5,6 @@ import { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/session";
-import { canManageGroup } from "@/lib/authz";
 import { logActivity } from "@/lib/activity";
 import { snapshotRankings } from "@/lib/rankings";
 import { ActionResult, fail, handleActionError, ok, zodFail } from "@/lib/action";
@@ -23,18 +22,14 @@ export async function createScoreEntry(
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await authorize([Role.ADMIN, Role.STAFF]);
+    // Scoring is restricted to admins and dedicated scorers; both may score any group.
+    const user = await authorize([Role.ADMIN, Role.SCORER]);
     const parsed = scoreEntrySchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
 
     const data = parsed.data;
 
-    // Staff may only score groups they lead; admins may score any group.
-    if (!(await canManageGroup(user, data.groupId))) {
-      return fail("You can only award or deduct points for a group you lead.");
-    }
-
-    // Categories are admin-managed. Staff must use an existing one; an admin
+    // Categories are admin-managed. Scorers must use an existing one; an admin
     // who types a new one auto-registers it in the managed list.
     const existingCategory = await prisma.scoreCategory.findUnique({
       where: { name: data.category },

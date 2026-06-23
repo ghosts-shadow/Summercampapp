@@ -37,18 +37,22 @@ groups, attendance, scoring, and live rankings.
 
 ## 🔐 Roles
 
-| Capability                         | Admin | Staff |
-| ---------------------------------- | :---: | :---: |
-| View dashboard & rankings          |  ✅   |  ✅   |
-| Record attendance                  |  ✅   |  ✅   |
-| Award / deduct points              |  ✅   |  ✅   |
-| Create/edit/delete campers         |  ✅   |  ❌   |
-| Create/edit/delete groups          |  ✅   |  ❌   |
-| Assign campers to groups           |  ✅   |  ❌   |
-| Revert score entries               |  ✅   |  ❌   |
-| Manage staff accounts              |  ✅   |  ❌   |
-| Export reports                     |  ✅   |  ✅   |
-| Public leaderboard (`/leaderboard`)| Public — no login required |
+| Capability                          | Admin | Scorer | Staff |
+| ----------------------------------- | :---: | :----: | :---: |
+| View dashboard & rankings           |  ✅   |   ✅   |  ✅   |
+| Award / deduct points (any group)   |  ✅   |   ✅   |  ❌   |
+| Record attendance (own group)       |  ✅   |   ❌   |  ✅   |
+| Create/edit/delete campers          |  ✅   |   ❌   |  ❌   |
+| Create/edit/delete groups & leaders |  ✅   |   ❌   |  ❌   |
+| Manage scoring categories           |  ✅   |   ❌   |  ❌   |
+| Revert score entries                |  ✅   |   ❌   |  ❌   |
+| Manage staff accounts               |  ✅   |   ❌   |  ❌   |
+| Export reports (CSV/Excel)          |  ✅   |   ❌   |  ❌   |
+| Public leaderboard (`/leaderboard`) | Public — no login required |
+
+> **Scorer** is a dedicated scoring role (e.g. judges): they can award/deduct
+> points for any group but cannot manage campers, groups, attendance, or staff.
+> **Staff** are group leaders: they record attendance for the group(s) they lead.
 
 ## 🚀 Quick Start
 

@@ -131,6 +131,18 @@ async function main() {
   }
   console.log(`✅  ${staff.length} staff created (password: ${staffPassword})`);
 
+  // ---- Scorer (dedicated scoring role) ----------------------------------
+  const scorer = await prisma.user.create({
+    data: {
+      name: "Sam Scorer",
+      email: "scorer@stjosephscamp.org",
+      passwordHash: await bcrypt.hash("Scorer123!", 12),
+      role: Role.SCORER,
+      phone: phone(),
+    },
+  });
+  console.log(`✅  Scorer created:  ${scorer.email}  /  Scorer123!`);
+
   // ---- Groups -----------------------------------------------------------
   const groups = [];
   for (let i = 0; i < GROUPS.length; i++) {
@@ -284,6 +296,7 @@ async function main() {
   console.log("    Login at /login");
   console.log(`    Admin:  ${adminEmail}  /  ${adminPassword}`);
   console.log(`    Staff:  ${staffSeeds[0].email}  /  ${staffPassword}`);
+  console.log(`    Scorer: scorer@stjosephscamp.org  /  Scorer123!`);
   console.log("");
 }
 
