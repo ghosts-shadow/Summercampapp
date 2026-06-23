@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Tent } from "lucide-react";
+import { CampLogo } from "@/components/camp-logo";
 
 import {
   Card,
@@ -25,9 +25,7 @@ export default async function LoginPage({
     <div className="flex min-h-dvh items-center justify-center bg-gradient-to-b from-background to-primary/5 p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow">
-            <Tent className="h-6 w-6" />
-          </div>
+          <CampLogo size={64} priority className="mb-3 shadow" />
           <h1 className="text-lg font-semibold">{CAMP.name}</h1>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, Tent } from "lucide-react";
+import { Menu } from "lucide-react";
 import type { Role } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLinks } from "@/components/layout/nav-links";
+import { CampLogo } from "@/components/camp-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 
@@ -35,9 +36,7 @@ export function DashboardHeader({
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="flex h-16 flex-row items-center gap-2 space-y-0 border-b px-5 text-left">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Tent className="h-4 w-4" />
-            </div>
+            <CampLogo size={32} />
             <SheetTitle>St. Joseph&apos;s Camp</SheetTitle>
             <SheetDescription className="sr-only">
               Main navigation

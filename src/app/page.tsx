@@ -10,6 +10,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CampLogo } from "@/components/camp-logo";
 import { CAMP } from "@/lib/constants";
 
 export default function LandingPage() {
@@ -24,9 +25,7 @@ export default function LandingPage() {
     <div className="flex min-h-dvh flex-col bg-gradient-to-b from-background via-background to-primary/5">
       <header className="container flex items-center justify-between py-6">
         <div className="flex items-center gap-2 font-semibold">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Tent className="h-5 w-5" />
-          </div>
+          <CampLogo size={36} />
           <span>{CAMP.shortName}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -41,6 +40,7 @@ export default function LandingPage() {
       </header>
 
       <main className="container flex flex-1 flex-col items-center justify-center py-16 text-center">
+        <CampLogo size={112} priority className="mb-6 shadow-lg" />
         <span className="mb-4 inline-flex items-center rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground shadow-sm">
           🏕️ Summer {CAMP.dates.split(",")[1] ?? "2026"} Registration Open
         </span>

@@ -1,17 +1,16 @@
 import Link from "next/link";
-import { ExternalLink, Tent } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { Role } from "@prisma/client";
 
 import { NavLinks } from "@/components/layout/nav-links";
+import { CampLogo } from "@/components/camp-logo";
 import { CAMP } from "@/lib/constants";
 
 export function AppSidebar({ role }: { role: Role }) {
   return (
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r bg-card md:flex">
       <div className="flex h-16 items-center gap-2 border-b px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Tent className="h-4 w-4" />
-        </div>
+        <CampLogo size={36} />
         <div className="leading-tight">
           <p className="text-sm font-semibold">St. Joseph&apos;s</p>
           <p className="text-xs text-muted-foreground">Summer Camp</p>

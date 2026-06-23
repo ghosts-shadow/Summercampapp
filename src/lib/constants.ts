@@ -28,11 +28,28 @@ export const SCORE_CATEGORIES = [
   "Service Project",
 ] as const;
 
-/** Suggested colors when creating a group. */
-export const GROUP_COLORS = [
-  "#ef4444", "#f97316", "#eab308", "#22c55e", "#10b981",
-  "#3b82f6", "#6366f1", "#a855f7", "#ec4899", "#14b8a6",
+/** Official 2026 team / t-shirt colors (from the camp brand guide). */
+export const TEAM_COLORS = [
+  { name: "Pink", hex: "#F4A7B9" },
+  { name: "Sky Blue", hex: "#87CEEB" },
+  { name: "Yellow", hex: "#FFE033" },
+  { name: "Peach", hex: "#FFCBA4" },
+  { name: "Orange", hex: "#FF6B2B" },
+  { name: "Apple Green", hex: "#5DBB63" },
+  { name: "Turquoise", hex: "#40E0D0" },
+  { name: "White", hex: "#FFFFFF" },
+  { name: "Lavender", hex: "#C9A9E0" },
+  { name: "Grey", hex: "#9E9E9E" },
+  { name: "Red", hex: "#D32F2F" },
+  { name: "Maroon", hex: "#800000" },
+  { name: "Purple", hex: "#7B2D8B" },
+  { name: "Neon Green", hex: "#39FF14" },
+  { name: "Navy Blue", hex: "#1A237E" },
+  { name: "Warm Sand", hex: "#D7C9B2" },
 ] as const;
+
+/** Color swatches offered when creating/editing a group. */
+export const GROUP_COLORS: string[] = TEAM_COLORS.map((c) => c.hex);
 
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrator",

@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 
 import { groupSchema, type GroupInput } from "@/lib/validations";
 import { createGroup, updateGroup } from "@/server/actions/groups";
-import { GROUP_COLORS } from "@/lib/constants";
+import { TEAM_COLORS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +69,7 @@ export function GroupFormDialog({
     resolver: zodResolver(groupSchema),
     defaultValues: {
       name: group?.name ?? "",
-      color: group?.color ?? GROUP_COLORS[5],
+      color: group?.color ?? TEAM_COLORS[5].hex,
       description: group?.description ?? "",
       leaderId: group?.leaderId ?? "",
     },
@@ -122,17 +122,20 @@ export function GroupFormDialog({
           <div className="space-y-2">
             <Label>Group color</Label>
             <div className="flex flex-wrap items-center gap-2">
-              {GROUP_COLORS.map((c) => (
+              {TEAM_COLORS.map((t) => (
                 <button
                   type="button"
-                  key={c}
-                  onClick={() => setValue("color", c, { shouldDirty: true })}
+                  key={t.hex}
+                  title={t.name}
+                  onClick={() => setValue("color", t.hex, { shouldDirty: true })}
                   className={cn(
                     "h-7 w-7 rounded-full border-2 transition-transform hover:scale-110",
-                    color === c ? "border-foreground" : "border-transparent",
+                    (color ?? "").toLowerCase() === t.hex.toLowerCase()
+                      ? "border-foreground"
+                      : "border-foreground/15",
                   )}
-                  style={{ backgroundColor: c }}
-                  aria-label={`Select ${c}`}
+                  style={{ backgroundColor: t.hex }}
+                  aria-label={`Select ${t.name}`}
                 />
               ))}
               <Controller

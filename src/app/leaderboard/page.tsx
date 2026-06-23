@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Tent, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 
 import { getRankings } from "@/lib/rankings";
 import { CAMP } from "@/lib/constants";
 import { LiveLeaderboard } from "@/components/rankings/live-leaderboard";
+import { CampLogo } from "@/components/camp-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
@@ -22,9 +23,7 @@ export default async function PublicLeaderboardPage() {
     <div className="min-h-dvh bg-gradient-to-b from-background via-background to-primary/5">
       <header className="container flex items-center justify-between py-5">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Tent className="h-5 w-5" />
-          </div>
+          <CampLogo size={36} />
           <span className="hidden sm:inline">{CAMP.shortName}</span>
         </Link>
         <div className="flex items-center gap-2">
@@ -37,6 +36,7 @@ export default async function PublicLeaderboardPage() {
 
       <main className="container max-w-4xl pb-20">
         <div className="mb-8 text-center">
+          <CampLogo size={96} priority className="mx-auto mb-4 shadow-lg" />
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-card px-4 py-1.5 text-sm shadow-sm">
             <Trophy className="h-4 w-4 text-yellow-500" />
             Group Standings
