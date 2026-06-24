@@ -47,6 +47,27 @@ export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
 //  Camper
 // ---------------------------------------------------------------------------
 
+// UAE phone number. Accepts the common ways people write them — with or
+// without the +971 country code, leading 0, and spaces/dashes/parens — then
+// validates the underlying digits against UAE numbering:
+//   • Mobile:   05X XXXXXXX        (10 digits, second digit 5)
+//   • Landline: 0X XXXXXXX         (9 digits, area code 2,3,4,6,7,9)
+// With the +971 country code the leading 0 is dropped.
+const uaePhone = z
+  .string()
+  .trim()
+  .min(1, "Guardian phone is required")
+  .refine((raw) => {
+    // Keep only digits; treat a leading +971 / 00971 / 971 as the country code.
+    let d = raw.replace(/\D/g, "");
+    if (d.startsWith("00971")) d = d.slice(5);
+    else if (d.startsWith("971")) d = d.slice(3);
+    // National form: ensure a single leading 0 so both patterns are uniform.
+    if (!d.startsWith("0")) d = "0" + d;
+    // Mobile (05X + 7) or landline (area code + 7).
+    return /^05[0-9]\d{7}$/.test(d) || /^0[234679]\d{7}$/.test(d);
+  }, "Enter a valid UAE phone number (e.g. 050 123 4567)");
+
 export const camperSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(60),
   lastName: z.string().min(1, "Last name is required").max(60),
@@ -57,7 +78,7 @@ export const camperSchema = z.object({
     .max(CAMP.maxAge, `Campers must be ${CAMP.maxAge} or younger`),
   gender: z.nativeEnum(Gender).default(Gender.UNSPECIFIED),
   guardianName: z.string().min(2, "Guardian name is required").max(120),
-  guardianPhone: z.string().min(5, "Guardian phone is required").max(30),
+  guardianPhone: uaePhone,
   emergencyContact: z.string().min(2, "Emergency contact is required").max(160),
   medicalNotes: z.string().max(1000).optional().or(z.literal("")),
   groupId: z.string().optional().or(z.literal("")),
