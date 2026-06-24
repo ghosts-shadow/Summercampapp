@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/session";
+import { canRenameGroup } from "@/lib/authz";
 import { logActivity } from "@/lib/activity";
 import { ActionResult, fail, handleActionError, ok, zodFail } from "@/lib/action";
 import { groupSchema, updateGroupSchema } from "@/lib/validations";
@@ -29,7 +30,11 @@ export async function createGroup(input: unknown): Promise<ActionResult<{ id: st
         name: data.name,
         color: data.color,
         description: data.description || null,
-        leaderId: data.leaderId || null,
+        // Primary leader (one of leaderIds, validated by the schema).
+        leaderId: data.primaryLeaderId || null,
+        leaderships: data.leaderIds.length
+          ? { create: data.leaderIds.map((userId) => ({ userId })) }
+          : undefined,
       },
     });
 
@@ -50,20 +55,51 @@ export async function createGroup(input: unknown): Promise<ActionResult<{ id: st
 
 export async function updateGroup(input: unknown): Promise<ActionResult> {
   try {
-    const user = await authorize([Role.ADMIN]);
+    const user = await authorize();
     const parsed = updateGroupSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
 
     const { id, ...data } = parsed.data;
-    await prisma.group.update({
-      where: { id },
-      data: {
-        name: data.name,
-        color: data.color,
-        description: data.description || null,
-        leaderId: data.leaderId || null,
-      },
-    });
+
+    // Renaming/editing a group is admin-only or PRIMARY-leader-only.
+    // Co-leaders manage campers/attendance/scoring but not the group itself.
+    if (!(await canRenameGroup(user, id))) {
+      return fail("Only the group's primary leader can edit it.");
+    }
+
+    const isAdmin = user.role === Role.ADMIN;
+    if (isAdmin) {
+      // Admins may also (re)assign the full leader set + primary.
+      await prisma.$transaction([
+        prisma.groupLeadership.deleteMany({ where: { groupId: id } }),
+        ...(data.leaderIds.length
+          ? [
+              prisma.groupLeadership.createMany({
+                data: data.leaderIds.map((userId) => ({ groupId: id, userId })),
+              }),
+            ]
+          : []),
+        prisma.group.update({
+          where: { id },
+          data: {
+            name: data.name,
+            color: data.color,
+            description: data.description || null,
+            leaderId: data.primaryLeaderId || null,
+          },
+        }),
+      ]);
+    } else {
+      // Primary leader: may edit details only, not the leadership roster.
+      await prisma.group.update({
+        where: { id },
+        data: {
+          name: data.name,
+          color: data.color,
+          description: data.description || null,
+        },
+      });
+    }
 
     await logActivity({
       userId: user.id,
@@ -135,31 +171,52 @@ export async function assignCampersToGroup(
   }
 }
 
-/** Assign (or clear) a group's leader. */
-export async function setGroupLeader(
+/** Replace a group's full leader set and designate its primary. Admin only. */
+export async function setGroupLeaders(
   groupId: string,
-  leaderId: string | null,
+  leaderIds: string[],
+  primaryLeaderId: string | null,
 ): Promise<ActionResult> {
   try {
     const user = await authorize([Role.ADMIN]);
     if (!groupId) return fail("Missing group id.");
+    if (!Array.isArray(leaderIds)) return fail("Invalid leaders payload.");
 
-    await prisma.group.update({
-      where: { id: groupId },
-      data: { leaderId: leaderId || null },
-    });
+    // Dedupe and validate the primary belongs to the leader set.
+    const ids = Array.from(new Set(leaderIds.filter(Boolean)));
+    const primary = primaryLeaderId || null;
+    if (ids.length > 0 && (!primary || !ids.includes(primary))) {
+      return fail("Choose a primary leader from the selected staff.");
+    }
+
+    await prisma.$transaction([
+      prisma.groupLeadership.deleteMany({ where: { groupId } }),
+      ...(ids.length
+        ? [
+            prisma.groupLeadership.createMany({
+              data: ids.map((userId) => ({ groupId, userId })),
+            }),
+          ]
+        : []),
+      prisma.group.update({
+        where: { id: groupId },
+        data: { leaderId: primary },
+      }),
+    ]);
 
     await logActivity({
       userId: user.id,
       action: "UPDATE",
       entity: "Group",
       entityId: groupId,
-      message: leaderId ? "Assigned a group leader" : "Cleared group leader",
+      message: ids.length
+        ? `Updated group leaders (${ids.length})`
+        : "Cleared group leaders",
     });
 
     revalidateGroupViews();
     revalidatePath(`/groups/${groupId}`);
-    return ok(undefined, leaderId ? "Group leader assigned." : "Group leader removed.");
+    return ok(undefined, ids.length ? "Group leaders updated." : "Group leaders cleared.");
   } catch (e) {
     return handleActionError(e);
   }

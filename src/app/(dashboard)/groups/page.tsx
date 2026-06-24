@@ -21,6 +21,9 @@ export default async function GroupsPage() {
       include: {
         _count: { select: { campers: true } },
         leader: { select: { id: true, name: true } },
+        leaderships: {
+          include: { user: { select: { id: true, name: true } } },
+        },
       },
     }),
     prisma.user.findMany({
@@ -36,7 +39,9 @@ export default async function GroupsPage() {
     color: g.color,
     description: g.description,
     totalScore: g.totalScore,
-    leader: g.leader,
+    primaryLeaderId: g.leaderId,
+    primaryLeader: g.leader,
+    leaders: g.leaderships.map((l) => l.user),
     camperCount: g._count.campers,
   }));
 
@@ -77,7 +82,12 @@ export default async function GroupsPage() {
           }
         />
       ) : (
-        <GroupsGrid groups={groups} staff={staff} isAdmin={isAdmin} />
+        <GroupsGrid
+          groups={groups}
+          staff={staff}
+          isAdmin={isAdmin}
+          currentUserId={user.id}
+        />
       )}
     </div>
   );

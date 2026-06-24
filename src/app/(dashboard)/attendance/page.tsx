@@ -26,9 +26,9 @@ export default async function AttendancePage() {
   const user = await requireRole([Role.ADMIN, Role.STAFF]);
   const isAdmin = user.role === "ADMIN";
 
-  // Staff only see the groups they lead; admins see all.
+  // Staff only see the groups they lead (primary or co-leader); admins see all.
   const groups = await prisma.group.findMany({
-    where: isAdmin ? {} : { leaderId: user.id },
+    where: isAdmin ? {} : { leaderships: { some: { userId: user.id } } },
     orderBy: { name: "asc" },
     select: { id: true, name: true, color: true },
   });

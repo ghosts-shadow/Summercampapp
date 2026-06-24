@@ -35,7 +35,9 @@ export interface GroupRecord {
   color: string;
   description: string | null;
   totalScore: number;
-  leader: { id: string; name: string } | null;
+  primaryLeaderId: string | null;
+  primaryLeader: { id: string; name: string } | null;
+  leaders: { id: string; name: string }[];
   camperCount: number;
 }
 
@@ -43,10 +45,12 @@ export function GroupsGrid({
   groups,
   staff,
   isAdmin,
+  currentUserId,
 }: {
   groups: GroupRecord[];
   staff: { id: string; name: string }[];
   isAdmin: boolean;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -71,8 +75,11 @@ export function GroupsGrid({
           name: g.name,
           color: g.color,
           description: g.description,
-          leaderId: g.leader?.id ?? null,
+          leaderIds: g.leaders.map((l) => l.id),
+          primaryLeaderId: g.primaryLeaderId,
         };
+        // Only the primary leader (or an admin) may rename/edit the group.
+        const canEdit = isAdmin || g.primaryLeaderId === currentUserId;
         return (
           <Card key={g.id} className="overflow-hidden">
             <div className="h-2" style={{ backgroundColor: g.color }} />
@@ -85,7 +92,7 @@ export function GroupsGrid({
                   />
                   <h3 className="text-lg font-semibold">{g.name}</h3>
                 </div>
-                {isAdmin && (
+                {canEdit && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -96,28 +103,33 @@ export function GroupsGrid({
                       <GroupFormDialog
                         staff={staff}
                         group={formData}
+                        canAssignLeader={isAdmin}
                         trigger={
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="h-4 w-4" /> Edit
                           </DropdownMenuItem>
                         }
                       />
-                      <DropdownMenuSeparator />
-                      <ConfirmDialog
-                        destructive
-                        title={`Delete ${g.name}?`}
-                        description="Campers in this group will become unassigned. Scores and attendance for the group are removed."
-                        confirmText="Delete"
-                        onConfirm={() => handleDelete(g.id)}
-                        trigger={
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <Trash2 className="h-4 w-4" /> Delete
-                          </DropdownMenuItem>
-                        }
-                      />
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <ConfirmDialog
+                            destructive
+                            title={`Delete ${g.name}?`}
+                            description="Campers in this group will become unassigned. Scores and attendance for the group are removed."
+                            confirmText="Delete"
+                            onConfirm={() => handleDelete(g.id)}
+                            trigger={
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Trash2 className="h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            }
+                          />
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
@@ -138,7 +150,11 @@ export function GroupsGrid({
                   </span>
                 </div>
                 <Badge variant="secondary">
-                  {g.leader ? g.leader.name : "No leader"}
+                  {g.primaryLeader
+                    ? g.leaders.length > 1
+                      ? `${g.primaryLeader.name} +${g.leaders.length - 1}`
+                      : g.primaryLeader.name
+                    : "No leader"}
                 </Badge>
               </div>
 

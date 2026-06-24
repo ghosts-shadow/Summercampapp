@@ -54,9 +54,10 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  ledGroups       Group[]       @relation("GroupLeader")
-  scoreEntries    ScoreEntry[]  @relation("ScoreAuthor")
-  attendanceTaken Attendance[]  @relation("AttendanceRecorder")
+  ledGroups       Group[]           @relation("GroupLeader") // groups where this user is the PRIMARY leader
+  leaderships     GroupLeadership[] // every group this user leads (primary or co-leader)
+  scoreEntries    ScoreEntry[]      @relation("ScoreAuthor")
+  attendanceTaken Attendance[]      @relation("AttendanceRecorder")
   activityLogs    ActivityLog[]
 
   @@index([email])
@@ -81,7 +82,11 @@ model Group {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  leader         User?            @relation("GroupLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  // `leader`/`leaderId` is the PRIMARY leader (one per group, can rename it).
+  // `leaderships` is the full set of leaders (primary + co-leaders) — the
+  // source of truth for "who may manage this group".
+  leader         User?             @relation("GroupLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  leaderships    GroupLeadership[]
   campers        Camper[]
   attendances    Attendance[]
   scoreEntries   ScoreEntry[]
@@ -89,6 +94,26 @@ model Group {
 
   @@index([leaderId])
   @@index([totalScore])
+}
+
+// ---------------------------------------------------------------------------
+//  GROUP LEADERSHIP  (join: which staff lead which group — many-to-many)
+// ---------------------------------------------------------------------------
+//  One row per (group, leader). The group's primary leader (Group.leaderId)
+//  also has a row here, so this table answers "is X a leader of group Y?" for
+//  attendance/scoring/camper-add permissions without special-casing primary.
+
+model GroupLeadership {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------

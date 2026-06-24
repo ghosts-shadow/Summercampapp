@@ -24,32 +24,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const NONE = "__none__";
+import { LeaderMultiSelect } from "@/components/groups/leader-multi-select";
 
 export interface GroupFormData {
   id: string;
   name: string;
   color: string;
   description: string | null;
-  leaderId: string | null;
+  leaderIds: string[];
+  primaryLeaderId: string | null;
 }
 
 export function GroupFormDialog({
   staff,
   group,
   trigger,
+  canAssignLeader = true,
 }: {
   staff: { id: string; name: string }[];
   group?: GroupFormData;
   trigger: ReactNode;
+  /** Only admins may set/change a group's leader. */
+  canAssignLeader?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -71,11 +67,14 @@ export function GroupFormDialog({
       name: group?.name ?? "",
       color: group?.color ?? TEAM_COLORS[5].hex,
       description: group?.description ?? "",
-      leaderId: group?.leaderId ?? "",
+      leaderIds: group?.leaderIds ?? [],
+      primaryLeaderId: group?.primaryLeaderId ?? "",
     },
   });
 
   const color = watch("color");
+  const leaderIds = watch("leaderIds") ?? [];
+  const primaryLeaderId = watch("primaryLeaderId") ?? "";
 
   function onSubmit(values: GroupInput) {
     startTransition(async () => {
@@ -157,31 +156,25 @@ export function GroupFormDialog({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Group leader</Label>
-            <Controller
-              control={control}
-              name="leaderId"
-              render={({ field }) => (
-                <Select
-                  value={field.value ? field.value : NONE}
-                  onValueChange={(v) => field.onChange(v === NONE ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No leader" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>No leader</SelectItem>
-                    {staff.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {canAssignLeader && (
+            <div className="space-y-1.5">
+              <LeaderMultiSelect
+                staff={staff}
+                leaderIds={leaderIds}
+                primaryId={primaryLeaderId}
+                onChange={(ids, primary) => {
+                  setValue("leaderIds", ids, { shouldDirty: true });
+                  setValue("primaryLeaderId", primary, { shouldDirty: true });
+                }}
+                disabled={pending}
+              />
+              {errors.primaryLeaderId && (
+                <p className="text-xs text-destructive">
+                  {errors.primaryLeaderId.message}
+                </p>
               )}
-            />
-          </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>

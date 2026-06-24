@@ -151,7 +151,16 @@ async function main() {
         name: GROUPS[i].name,
         color: GROUPS[i].color,
         description: GROUPS[i].description,
+        // Primary leader + a matching leadership row (source of truth for
+        // "who leads this group"). Group 0 also gets a co-leader to exercise
+        // the new many-to-many.
         leaderId: staff[i]?.id,
+        leaderships: {
+          create: [
+            ...(staff[i] ? [{ userId: staff[i]!.id }] : []),
+            ...(i === 0 && staff[1] ? [{ userId: staff[1]!.id }] : []),
+          ],
+        },
       },
     });
     groups.push(g);

@@ -29,15 +29,12 @@ export async function createScoreEntry(
 
     const data = parsed.data;
 
-    // Categories are admin-managed. Scorers must use an existing one; an admin
-    // who types a new one auto-registers it in the managed list.
+    // Admins and scorers may both add categories: typing a new one here
+    // auto-registers it in the managed list. (Removal stays admin-only.)
     const existingCategory = await prisma.scoreCategory.findUnique({
       where: { name: data.category },
     });
     if (!existingCategory) {
-      if (user.role !== Role.ADMIN) {
-        return fail("Only an administrator can create a new category.");
-      }
       await prisma.scoreCategory
         .create({ data: { name: data.category } })
         .catch(() => undefined); // ignore rare unique race

@@ -17,7 +17,8 @@ export async function createCategory(
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await authorize([Role.ADMIN]);
+    // Admins and scorers may add categories; renaming/removing stays admin-only.
+    const user = await authorize([Role.ADMIN, Role.SCORER]);
     const parsed = categorySchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
 

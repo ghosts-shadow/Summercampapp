@@ -80,11 +80,16 @@ const UNASSIGNED = "__unassigned__";
 export function CampersTable({
   campers,
   groups,
+  createGroups,
   isAdmin,
+  canCreate,
 }: {
   campers: CamperRecord[];
   groups: { id: string; name: string }[];
+  /** Groups the current user may add a camper to (all for admins). */
+  createGroups: { id: string; name: string }[];
   isAdmin: boolean;
+  canCreate: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -213,9 +218,10 @@ export function CampersTable({
           )}
 
           {isAdmin && <CamperImportDialog />}
-          {isAdmin && (
+          {canCreate && (
             <CamperFormDialog
-              groups={groups}
+              groups={createGroups}
+              allowUnassigned={isAdmin}
               trigger={
                 <Button>
                   <Plus className="h-4 w-4" /> Add camper

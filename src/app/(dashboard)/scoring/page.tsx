@@ -51,7 +51,7 @@ export default async function ScoringPage() {
         title="Scoring"
         description="Award or deduct points for any group and review the score history."
       >
-        {isAdmin && <ManageCategoriesDialog categories={categoryRows} />}
+        <ManageCategoriesDialog categories={categoryRows} isAdmin={isAdmin} />
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
@@ -59,7 +59,7 @@ export default async function ScoringPage() {
             <ScoreForm
               groups={formGroups}
               categories={categories}
-              canAddCategory={isAdmin}
+              canAddCategory
             />
           ) : (
             <EmptyState

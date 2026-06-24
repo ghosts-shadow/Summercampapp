@@ -79,20 +79,36 @@ export const moveCamperSchema = z.object({
 //  Group
 // ---------------------------------------------------------------------------
 
-export const groupSchema = z.object({
+const groupBase = z.object({
   name: z.string().min(2, "Group name is required").max(60),
   color: z
     .string()
     .regex(/^#([0-9a-fA-F]{6})$/, "Color must be a hex value like #3b82f6")
     .default("#3b82f6"),
   description: z.string().max(500).optional().or(z.literal("")),
-  leaderId: z.string().optional().or(z.literal("")),
+  // Multiple staff may lead a group. `leaderIds` is the full set;
+  // `primaryLeaderId` designates the one primary (required when any leaders
+  // are assigned, and must be one of the selected leaders).
+  leaderIds: z.array(z.string()).default([]),
+  primaryLeaderId: z.string().optional().or(z.literal("")),
 });
+
+// A primary must be chosen whenever the group has leaders, and the primary
+// must be one of those leaders.
+const requirePrimary = (d: { leaderIds: string[]; primaryLeaderId?: string }) =>
+  d.leaderIds.length === 0 ||
+  Boolean(d.primaryLeaderId && d.leaderIds.includes(d.primaryLeaderId));
+const primaryError = {
+  message: "Choose a primary leader from the selected staff.",
+  path: ["primaryLeaderId"],
+};
+
+export const groupSchema = groupBase.refine(requirePrimary, primaryError);
 export type GroupInput = z.infer<typeof groupSchema>;
 
-export const updateGroupSchema = groupSchema.extend({
-  id: z.string().min(1),
-});
+export const updateGroupSchema = groupBase
+  .extend({ id: z.string().min(1) })
+  .refine(requirePrimary, primaryError);
 export type UpdateGroupInput = z.infer<typeof updateGroupSchema>;
 
 // ---------------------------------------------------------------------------

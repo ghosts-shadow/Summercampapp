@@ -24,6 +24,7 @@ export default async function GroupDetailPage({
     where: { id },
     include: {
       leader: { select: { name: true } },
+      leaderships: { include: { user: { select: { id: true, name: true } } } },
       campers: {
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
         select: { id: true, firstName: true, lastName: true, age: true },
@@ -78,14 +79,22 @@ export default async function GroupDetailPage({
             {isAdmin ? (
               <GroupLeaderSelect
                 groupId={group.id}
-                leaderId={group.leaderId}
+                leaderIds={group.leaderships.map((l) => l.user.id)}
+                primaryLeaderId={group.leaderId}
                 staff={staff}
               />
             ) : (
               <Stat
                 icon={UserCog}
-                label="Leader"
-                value={group.leader?.name ?? "—"}
+                label="Leaders"
+                value={
+                  group.leaderships.length === 0
+                    ? "—"
+                    : group.leader?.name +
+                      (group.leaderships.length > 1
+                        ? ` +${group.leaderships.length - 1}`
+                        : "")
+                }
               />
             )}
           </div>

@@ -40,6 +40,7 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  const isAdmin = user.role === "ADMIN";
 
   const now = new Date();
   const todayUtc = new Date(
@@ -248,35 +249,37 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Recent Activity</CardTitle>
-              <CardDescription>Latest actions across the camp</CardDescription>
-            </div>
-            <Activity className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activity.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 text-sm">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate">
-                    {log.message ?? `${log.action} ${log.entity}`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {log.user?.name ?? "System"} · {timeAgo(log.createdAt)}
-                  </p>
-                </div>
+        {isAdmin && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Recent Activity</CardTitle>
+                <CardDescription>Latest actions across the camp</CardDescription>
               </div>
-            ))}
-            {activity.length === 0 && (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                No activity recorded yet.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              <Activity className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {activity.map((log) => (
+                <div key={log.id} className="flex items-start gap-3 text-sm">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate">
+                      {log.message ?? `${log.action} ${log.entity}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {log.user?.name ?? "System"} · {timeAgo(log.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {activity.length === 0 && (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No activity recorded yet.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

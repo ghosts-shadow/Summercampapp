@@ -1,38 +1,38 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, UserCog } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-import { setGroupLeader } from "@/server/actions/groups";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const NONE = "__none__";
+import { setGroupLeaders } from "@/server/actions/groups";
+import { LeaderMultiSelect } from "@/components/groups/leader-multi-select";
+import { Button } from "@/components/ui/button";
 
 export function GroupLeaderSelect({
   groupId,
-  leaderId,
+  leaderIds: initialLeaderIds,
+  primaryLeaderId,
   staff,
 }: {
   groupId: string;
-  leaderId: string | null;
+  leaderIds: string[];
+  primaryLeaderId: string | null;
   staff: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [leaderIds, setLeaderIds] = useState<string[]>(initialLeaderIds);
+  const [primaryId, setPrimaryId] = useState<string>(primaryLeaderId ?? "");
 
-  function onChange(value: string) {
-    const next = value === NONE ? null : value;
+  const dirty =
+    primaryId !== (primaryLeaderId ?? "") ||
+    leaderIds.length !== initialLeaderIds.length ||
+    leaderIds.some((id) => !initialLeaderIds.includes(id));
+
+  function save() {
     startTransition(async () => {
-      const result = await setGroupLeader(groupId, next);
+      const result = await setGroupLeaders(groupId, leaderIds, primaryId || null);
       if (result.ok) {
         toast.success(result.message ?? "Updated");
         router.refresh();
@@ -43,29 +43,23 @@ export function GroupLeaderSelect({
   }
 
   return (
-    <div className="space-y-1.5">
-      <Label className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
-        <UserCog className="h-3.5 w-3.5" /> Group leader
-      </Label>
-      <Select value={leaderId ?? NONE} onValueChange={onChange} disabled={pending}>
-        <SelectTrigger className="w-full sm:w-[240px]">
-          {pending ? (
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Saving…
-            </span>
-          ) : (
-            <SelectValue placeholder="No leader assigned" />
-          )}
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NONE}>No leader</SelectItem>
-          {staff.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              {s.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="w-full sm:w-[260px] space-y-2">
+      <LeaderMultiSelect
+        staff={staff}
+        leaderIds={leaderIds}
+        primaryId={primaryId}
+        onChange={(ids, primary) => {
+          setLeaderIds(ids);
+          setPrimaryId(primary);
+        }}
+        disabled={pending}
+      />
+      {dirty && (
+        <Button size="sm" onClick={save} disabled={pending} className="w-full">
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+          Save leaders
+        </Button>
+      )}
     </div>
   );
 }

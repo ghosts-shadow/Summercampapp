@@ -51,10 +51,13 @@ export function CamperFormDialog({
   groups,
   camper,
   trigger,
+  allowUnassigned = true,
 }: {
   groups: { id: string; name: string }[];
   camper?: CamperFormData;
   trigger: ReactNode;
+  /** Whether the camper may be left without a group. Staff must pick a group. */
+  allowUnassigned?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -79,7 +82,7 @@ export function CamperFormDialog({
       guardianPhone: camper?.guardianPhone ?? "",
       emergencyContact: camper?.emergencyContact ?? "",
       medicalNotes: camper?.medicalNotes ?? "",
-      groupId: camper?.groupId ?? "",
+      groupId: camper?.groupId ?? (allowUnassigned ? "" : groups[0]?.id ?? ""),
     },
   });
 
@@ -181,7 +184,9 @@ export function CamperFormDialog({
                     <SelectValue placeholder="Unassigned" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>Unassigned</SelectItem>
+                    {allowUnassigned && (
+                      <SelectItem value={NONE}>Unassigned</SelectItem>
+                    )}
                     {groups.map((g) => (
                       <SelectItem key={g.id} value={g.id}>
                         {g.name}

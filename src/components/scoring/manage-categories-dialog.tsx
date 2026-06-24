@@ -24,8 +24,11 @@ import {
 
 export function ManageCategoriesDialog({
   categories,
+  isAdmin,
 }: {
   categories: { id: string; name: string }[];
+  /** Only admins may rename or delete; scorers may only add. */
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -89,10 +92,13 @@ export function ManageCategoriesDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Manage scoring categories</DialogTitle>
+          <DialogTitle>
+            {isAdmin ? "Manage scoring categories" : "Add scoring category"}
+          </DialogTitle>
           <DialogDescription>
-            Add, rename, or remove the categories available when awarding points.
-            Renaming also updates past entries; removing keeps history intact.
+            {isAdmin
+              ? "Add, rename, or remove the categories available when awarding points. Renaming also updates past entries; removing keeps history intact."
+              : "Add a category to use when awarding points. Renaming and removing categories is restricted to administrators."}
           </DialogDescription>
         </DialogHeader>
 
@@ -187,25 +193,29 @@ export function ManageCategoriesDialog({
                   <span className="flex-1 truncate text-sm font-medium">
                     {c.name}
                   </span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Rename ${c.name}`}
-                    onClick={() => {
-                      setEditingId(c.id);
-                      setEditName(c.name);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Delete ${c.name}`}
-                    onClick={() => setConfirmDeleteId(c.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {isAdmin && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Rename ${c.name}`}
+                        onClick={() => {
+                          setEditingId(c.id);
+                          setEditName(c.name);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Delete ${c.name}`}
+                        onClick={() => setConfirmDeleteId(c.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </>
+                  )}
                 </>
               )}
             </div>
