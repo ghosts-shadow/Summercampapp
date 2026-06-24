@@ -44,11 +44,15 @@ export function GroupMembersManager({
   members,
   unassigned,
   isAdmin,
+  canAddMembers = isAdmin,
 }: {
   groupId: string;
   members: CamperLite[];
   unassigned: CamperLite[];
+  /** Admins may remove members. */
   isAdmin: boolean;
+  /** Admins and the group's leaders may add unassigned campers. */
+  canAddMembers?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -105,7 +109,7 @@ export function GroupMembersManager({
             ({members.length})
           </span>
         </h2>
-        {isAdmin && (
+        {canAddMembers && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button disabled={unassigned.length === 0}>

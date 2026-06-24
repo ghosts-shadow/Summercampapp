@@ -18,23 +18,14 @@ export default async function CampersPage() {
     }),
     prisma.group.findMany({
       orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        // Only this user's leadership row (empty array => not a leader).
-        leaderships: { where: { userId: user.id }, select: { id: true } },
-      },
+      select: { id: true, name: true },
     }),
   ]);
 
-  // Admins may add a camper to any group; staff may only add to groups they
-  // lead (primary or co-leader). Editing/deleting campers stays admin-only.
+  // Everyone can browse the roster + filter by group. Creating a new camper is
+  // admin-only; staff are read-only here (edit/delete are already admin-only).
   const filterGroups = groups.map(({ id, name }) => ({ id, name }));
-  const createGroups = isAdmin
-    ? filterGroups
-    : groups
-        .filter((g) => g.leaderships.length > 0)
-        .map(({ id, name }) => ({ id, name }));
+  const createGroups = isAdmin ? filterGroups : [];
 
   return (
     <div>
@@ -47,7 +38,7 @@ export default async function CampersPage() {
         groups={filterGroups}
         createGroups={createGroups}
         isAdmin={isAdmin}
-        canCreate={isAdmin || createGroups.length > 0}
+        canCreate={isAdmin}
       />
     </div>
   );

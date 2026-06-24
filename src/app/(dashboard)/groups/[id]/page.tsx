@@ -35,7 +35,10 @@ export default async function GroupDetailPage({
   if (!group) notFound();
 
   const isAdmin = user.role === "ADMIN";
-  const unassigned = isAdmin
+  // A leader (primary or co-leader) of this group may add unassigned campers.
+  const isLeader = group.leaderships.some((l) => l.user.id === user.id);
+  const canAddMembers = isAdmin || isLeader;
+  const unassigned = canAddMembers
     ? await prisma.camper.findMany({
         where: { groupId: null },
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -106,6 +109,7 @@ export default async function GroupDetailPage({
         members={group.campers}
         unassigned={unassigned}
         isAdmin={isAdmin}
+        canAddMembers={canAddMembers}
       />
     </div>
   );

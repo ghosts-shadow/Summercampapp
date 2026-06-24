@@ -5,7 +5,7 @@ import { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/session";
-import { canRenameGroup } from "@/lib/authz";
+import { canManageGroup, canRenameGroup } from "@/lib/authz";
 import { logActivity } from "@/lib/activity";
 import { ActionResult, fail, handleActionError, ok, zodFail } from "@/lib/action";
 import { groupSchema, updateGroupSchema } from "@/lib/validations";
@@ -140,32 +140,55 @@ export async function deleteGroup(id: string): Promise<ActionResult> {
   }
 }
 
-/** Bulk-assign campers to (or unassign from) a group. */
+/**
+ * Bulk-assign campers to a group.
+ * - Admins may assign any campers to any group.
+ * - Group leaders (primary or co-leader) may add campers to a group they lead,
+ *   but only campers who are currently UNASSIGNED (no stealing from another
+ *   group). Removing campers stays admin-only (see moveCamper).
+ */
 export async function assignCampersToGroup(
   groupId: string | null,
   camperIds: string[],
 ): Promise<ActionResult> {
   try {
-    const user = await authorize([Role.ADMIN]);
+    const user = await authorize();
     if (!Array.isArray(camperIds) || camperIds.length === 0) {
       return fail("Select at least one camper.");
     }
 
-    await prisma.camper.updateMany({
-      where: { id: { in: camperIds } },
+    const isAdmin = user.role === Role.ADMIN;
+
+    if (!isAdmin) {
+      // Leaders may only add TO a group they lead — not unassign.
+      if (!groupId) return fail("Pick a group to add campers to.");
+      if (!(await canManageGroup(user, groupId))) {
+        return fail("You can only add campers to a group you lead.");
+      }
+    }
+
+    // Non-admins can only pull in unassigned campers.
+    const result = await prisma.camper.updateMany({
+      where: isAdmin
+        ? { id: { in: camperIds } }
+        : { id: { in: camperIds }, groupId: null },
       data: { groupId: groupId || null },
     });
+
+    if (result.count === 0) {
+      return fail("Those campers are no longer available to add.");
+    }
 
     await logActivity({
       userId: user.id,
       action: "ASSIGN",
       entity: "Group",
       entityId: groupId ?? undefined,
-      message: `Assigned ${camperIds.length} camper(s)`,
+      message: `Assigned ${result.count} camper(s)`,
     });
 
     revalidateGroupViews();
-    return ok(undefined, `Updated ${camperIds.length} camper(s).`);
+    return ok(undefined, `Added ${result.count} camper(s).`);
   } catch (e) {
     return handleActionError(e);
   }

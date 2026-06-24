@@ -5,7 +5,6 @@ import { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { authorize } from "@/lib/session";
-import { canManageGroup } from "@/lib/authz";
 import { logActivity } from "@/lib/activity";
 import { ActionResult, fail, handleActionError, ok, zodFail } from "@/lib/action";
 import {
@@ -22,19 +21,14 @@ function revalidateCamperViews() {
 
 export async function createCamper(input: unknown): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await authorize();
+    // Creating a brand-new camper record is admin-only. Staff manage their
+    // group's roster by assigning EXISTING campers (see assignCampersToGroup);
+    // they have read-only access to the main camper list.
+    const user = await authorize([Role.ADMIN]);
     const parsed = camperSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
 
     const data = parsed.data;
-
-    // Admins may add a camper to any group (or none). Staff may only add a
-    // camper to a group they lead. Editing/deleting campers stays admin-only.
-    if (user.role !== Role.ADMIN) {
-      if (!data.groupId || !(await canManageGroup(user, data.groupId))) {
-        return fail("Staff can only add campers to a group they lead.");
-      }
-    }
     const camper = await prisma.camper.create({
       data: {
         firstName: data.firstName,
