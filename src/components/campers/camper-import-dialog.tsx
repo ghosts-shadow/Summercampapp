@@ -3,9 +3,9 @@
 import { type ChangeEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
+import { Download, Loader2, Upload } from "lucide-react";
 
-import { parseCSVToObjects } from "@/lib/csv";
+import { downloadCSV, parseCSVToObjects } from "@/lib/csv";
 import { bulkImportCampers } from "@/server/actions/campers";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,11 @@ import {
 
 const TEMPLATE =
   "firstName,lastName,age,gender,guardianName,guardianPhone,emergencyContact,medicalNotes,group";
+
+// Header + a filled example row, so the downloaded file is ready to edit.
+const EXAMPLE_ROW =
+  "John,Doe,12,MALE,Jane Doe,050 123 4567,Jane Doe 050 123 4567,,Red Lions";
+const TEMPLATE_FILE = `${TEMPLATE}\n${EXAMPLE_ROW}`;
 
 export function CamperImportDialog() {
   const router = useRouter();
@@ -75,7 +80,18 @@ export function CamperImportDialog() {
 
         <div className="space-y-4">
           <div className="rounded-md border bg-muted/40 p-3 text-xs">
-            <p className="font-medium">Expected columns</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-medium">Expected columns</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 shrink-0"
+                onClick={() => downloadCSV("camper-import-template", TEMPLATE_FILE)}
+              >
+                <Download className="h-3.5 w-3.5" /> Download template
+              </Button>
+            </div>
             <code className="mt-1 block break-words text-muted-foreground">
               {TEMPLATE}
             </code>

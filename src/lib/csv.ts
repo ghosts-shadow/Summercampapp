@@ -54,6 +54,25 @@ export function parseCSV(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
 }
 
+/**
+ * Trigger a client-side download of CSV text as a file. Browser-only —
+ * call from event handlers in client components. Prepends a UTF-8 BOM so
+ * Excel opens it with the correct encoding.
+ */
+export function downloadCSV(filename: string, content: string): void {
+  const blob = new Blob(["﻿" + content], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** Normalize a header label to a lower camelCase key (e.g. "First Name" -> "firstName"). */
 function normalizeHeader(header: string): string {
   const parts = header.trim().split(/[^A-Za-z0-9]+/).filter(Boolean);
