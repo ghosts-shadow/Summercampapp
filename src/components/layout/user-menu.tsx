@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LogOut, User as UserIcon } from "lucide-react";
 import type { Role } from "@prisma/client";
 
@@ -53,8 +54,10 @@ export function UserMenu({
           </Badge>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <UserIcon className="h-4 w-4" /> Profile
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <UserIcon className="h-4 w-4" /> Profile
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <form action={signOutAction} className="w-full">

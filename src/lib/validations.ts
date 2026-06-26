@@ -44,6 +44,32 @@ export const updateStaffSchema = z.object({
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
 
 // ---------------------------------------------------------------------------
+//  Profile (the signed-in user editing their own account)
+// ---------------------------------------------------------------------------
+
+export const updateProfileSchema = z
+  .object({
+    name: z.string().min(2, "Name is required").max(100),
+    email: z.string().email("Enter a valid email address").toLowerCase(),
+    phone: z.string().max(30).optional().or(z.literal("")),
+    // To change the password the user must supply their current one plus a
+    // valid new password. All three are optional; supplying any one requires
+    // the others (enforced by the refinements below).
+    currentPassword: z.string().optional().or(z.literal("")),
+    newPassword: z.union([passwordRules, z.literal("")]).optional(),
+    confirmPassword: z.string().optional().or(z.literal("")),
+  })
+  .refine((d) => !d.newPassword || Boolean(d.currentPassword), {
+    message: "Enter your current password to set a new one.",
+    path: ["currentPassword"],
+  })
+  .refine((d) => !d.newPassword || d.newPassword === d.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+// ---------------------------------------------------------------------------
 //  Camper
 // ---------------------------------------------------------------------------
 

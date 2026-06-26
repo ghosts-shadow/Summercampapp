@@ -19,12 +19,25 @@ export const authConfig = {
   trustHost: true,
   providers: [], // real providers are added in src/auth.ts
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string;
         token.role = user.role;
         token.name = user.name;
         token.email = user.email;
+      }
+      // When the user edits their own profile we push the new details into the
+      // token via `unstable_update`, so the header reflects them immediately.
+      if (trigger === "update" && session) {
+        const s = session as {
+          name?: string;
+          email?: string;
+          user?: { name?: string; email?: string };
+        };
+        const name = s.user?.name ?? s.name;
+        const email = s.user?.email ?? s.email;
+        if (name) token.name = name;
+        if (email) token.email = email;
       }
       return token;
     },
