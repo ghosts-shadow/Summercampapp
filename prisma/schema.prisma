@@ -122,6 +122,8 @@ model GroupLeadership {
 
 model Camper {
   id               String   @id @default(cuid())
+  // Official camp registration ID from the paper/PDF roster (e.g. SJC-2026-261).
+  externalId       String?  @unique
   firstName        String
   lastName         String
   age              Int
